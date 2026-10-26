@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AGENTS, OWNER, TASKS_INITIAL, SUGGESTIONS, PRESENTER, SCREEN_OF, thinkingLabels } from './data'
-import { Stage, MobileAgents, Filmstrip, Caption } from './Stage'
-import { Transcript, ControlBar, Intro } from './Chat'
+import { Stage, Filmstrip, Caption } from './Stage'
+import { ControlBar, Intro } from './Chat'
 import { EmailPanel, RunwayPanel, OpsPanel, MarketingPanel, SalesPanel } from './Panels'
 
 const PITCH = { bd: 1, finance: 0.82, marketing: 1.18, sales: 0.95, ops: 0.75 }
@@ -370,10 +370,8 @@ export default function App() {
         <div className="w-[60px] sm:hidden" />
       </header>
 
-      <main className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
-        <MobileAgents agents={AGENTS} selected={selected} thinking={thinking} speaking={speaking} onSelect={view} />
-        <Transcript messages={messages} thinking={thinking} />
-        <div className="order-1 hidden min-w-0 flex-1 flex-col lg:order-2 lg:flex">
+      <main className="relative flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <AnimatePresence mode="wait" initial={false}>
             {!panel ? (
               <motion.div key="stage" className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
@@ -382,7 +380,7 @@ export default function App() {
             ) : (
               <motion.div
                 key="share"
-                className="flex min-h-0 flex-1 flex-col px-6"
+                className="flex min-h-0 flex-1 flex-col px-3 sm:px-6"
                 initial={{ opacity: 0, scale: 0.96, filter: 'blur(10px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               >
@@ -393,16 +391,9 @@ export default function App() {
             )}
           </AnimatePresence>
         </div>
-        <AnimatePresence>
-          {panel && !isDesktop && (
-            <motion.div key="m" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} className="absolute inset-0 z-30 bg-[#05060a]">
-              {renderPanel()}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </main>
 
-      <div className="pointer-events-none fixed bottom-6 left-6 z-30 hidden lg:block [@media(max-height:720px)]:bottom-4">
+      <div className="pointer-events-none fixed bottom-6 left-6 z-30 hidden min-[900px]:block [@media(max-height:720px)]:bottom-4">
         <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-azure/90">Board Review · Q4</div>
         <div className="mt-1 text-[22px] font-light tracking-tight text-white/95">{OWNER.company}</div>
         <div className="mt-1 flex items-center gap-4 font-mono text-[10px] text-white/45">

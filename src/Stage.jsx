@@ -107,8 +107,8 @@ export function Stage({ agents, selected, thinking, speaking, onSelect, onView, 
   const sel = agents.find((a) => a.id === selected)
   const box = useRef(null)
   const [size, setSize] = useState({ w: 1100, h: 600 })
-  const cardScale = Math.max(0.8, Math.min(size.w / 1150, size.h / 600, 1.1))
-  const compact = size.h < 480
+  const cardScale = Math.max(0.5, Math.min(size.w / 1150, size.h / 600, 1.1))
+  const compact = size.h < 480 || size.w < 760
   const tableD = Math.round(Math.min(size.h * 0.66, size.w * 0.5))
   useEffect(() => {
     const el = box.current
@@ -120,7 +120,7 @@ export function Stage({ agents, selected, thinking, speaking, onSelect, onView, 
     return () => ro.disconnect()
   }, [])
   return (
-    <div ref={box} className="relative hidden min-h-0 flex-1 overflow-hidden lg:block">
+    <div ref={box} className="relative min-h-0 flex-1 overflow-hidden">
       {/* ambient light */}
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 70% at 50% -10%, rgba(77,141,255,.20), transparent 70%)' }} />
       <div className="pointer-events-none absolute left-[18%] top-[30%] h-[40%] w-[40%] rounded-full bg-[#2a5cff]/10 blur-[120px]" style={{ animation: 'drift 14s ease-in-out infinite' }} />
@@ -213,7 +213,7 @@ export function MobileAgents({ agents, selected, thinking, speaking, onSelect })
 
 export function Filmstrip({ agents, selected, thinking, speaking, presenter, onSelect }) {
   return (
-    <div className="scroll-thin flex shrink-0 items-center justify-center gap-3 overflow-x-auto px-4 pb-3 pt-1">
+    <div className="scroll-thin flex shrink-0 items-center gap-3 overflow-x-auto px-4 pb-3 pt-1" style={{ justifyContent: 'safe center' }}>
       {agents.map((a) => {
         const isPres = presenter === a.id
         const isSpeaking = speaking === a.id
