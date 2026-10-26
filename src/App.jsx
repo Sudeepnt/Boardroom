@@ -103,6 +103,7 @@ export default function App() {
       u.pitch = PITCH[who] ?? 1
       u.rate = 1.05
       u.onend = u.onerror = () => res()
+      speechSynthesis.resume()
       speechSynthesis.speak(u)
       setTimeout(res, text.length * 90 + 2500)
     })
@@ -118,7 +119,7 @@ export default function App() {
     for (let i = 2; i < text.length + 2; i += 2) {
       if (epochRef.current !== e) return
       setMessages((m) => m.map((x) => (x.id === id ? { ...x, text: text.slice(0, i) } : x)))
-      await sleep(voiced ? 105 : 15)
+      await sleep(voiced && voiceRef.current ? 105 : 15)
     }
     await talk
     if (epochRef.current === e) setSpeaking(null)
@@ -130,6 +131,15 @@ export default function App() {
       await sleep(ms / thinkingLabels[agent].length)
     }
     if (epochRef.current === e) setThinking(null)
+  }
+
+  const toggleVoice = () => {
+    const next = !voiceRef.current
+    voiceRef.current = next
+    setVoice(next)
+    if (!('speechSynthesis' in window)) return
+    if (next) speakAloud(live.current.selected || 'bd', 'Voices on.')
+    else speechSynthesis.cancel()
   }
 
   // stop whatever is being said or worked on right now
@@ -404,7 +414,7 @@ export default function App() {
 
       <ControlBar
         selected={selected} listening={listening} onMic={onMic} interim={interim} hint={hint?.text} onHint={() => hint && simulate(hint.text, hint.agent)}
-        busy={busy} voice={voice} setVoice={(f) => { setVoice(f); if (voice) speechSynthesis?.cancel?.() }} demo={demo} onDemo={runDemo}
+        busy={busy} voice={voice} onVoice={toggleVoice} demo={demo} onDemo={runDemo}
       />
     </div>
   )

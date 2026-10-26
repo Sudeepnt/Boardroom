@@ -64,7 +64,7 @@ export function Transcript({ messages, thinking }) {
   )
 }
 
-export function ControlBar({ selected, listening, onMic, interim, hint, onHint, busy, voice, setVoice, demo, onDemo }) {
+export function ControlBar({ selected, listening, onMic, interim, hint, onHint, busy, voice, onVoice, demo, onDemo }) {
   const agent = selected ? byId[selected] : null
   return (
     <div className="relative z-20 shrink-0 px-4 pb-8 pt-1 lg:pb-10 [@media(max-height:720px)]:pb-6">
@@ -90,7 +90,7 @@ export function ControlBar({ selected, listening, onMic, interim, hint, onHint, 
         </div>
 
         <div className="glass flex items-center gap-3 rounded-full p-2">
-          <button onClick={() => setVoice((v) => !v)} title={voice ? 'Mute agent voices' : 'Unmute agent voices'} className="grid h-11 w-11 place-items-center rounded-full text-white/55 transition hover:bg-white/[0.08] hover:text-white">
+          <button onClick={onVoice} title={voice ? 'Mute agent voices' : 'Unmute agent voices'} className="grid h-11 w-11 place-items-center rounded-full text-white/55 transition hover:bg-white/[0.08] hover:text-white">
             {voice ? <Volume2 size={18} strokeWidth={1.6} /> : <VolumeX size={18} strokeWidth={1.6} />}
           </button>
 
