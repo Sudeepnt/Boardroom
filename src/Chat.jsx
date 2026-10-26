@@ -128,6 +128,11 @@ export function ControlBar({ selected, listening, onMic, interim, hint, onHint, 
 }
 
 export function Intro({ onEnter }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Enter') onEnter() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onEnter])
   return (
     <motion.div
       className="absolute inset-0 z-50 grid place-items-center bg-[#05060a]"
