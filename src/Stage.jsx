@@ -3,13 +3,13 @@ import { motion } from 'framer-motion'
 import { MonitorPlay } from 'lucide-react'
 import { OWNER } from './data'
 
-export function Caption({ caption, className = '' }) {
+export function Caption({ caption, className = '', style }) {
   return (
-    <div className={`max-w-full ${className}`}>
+    <div className={`max-w-full ${className}`} style={style}>
       {caption && (
         <div className="text-center">
           <div className={`mb-1 font-mono text-[9.5px] uppercase tracking-[0.2em] ${caption.who === 'owner' ? 'text-white/60' : 'text-azure'}`}>{caption.name}</div>
-          <p className={`line-clamp-2 text-[14px] leading-[20px] ${caption.who === 'owner' ? 'text-white/70' : 'text-white'}`}>{caption.text}</p>
+          <p className={`line-clamp-2 text-[13px] leading-[18px] ${caption.who === 'owner' ? 'text-white/70' : 'text-white'}`}>{caption.text}</p>
         </div>
       )}
     </div>
@@ -64,13 +64,14 @@ function Wave({ on }) {
   )
 }
 
-function Seat({ agent, index, selected, thinking, speaking, onSelect, onView, entered }) {
+function Seat({ agent, index, selected, thinking, speaking, onSelect, onView, entered, s, compact }) {
   const isSel = selected === agent.id
   const isThinking = thinking?.agent === agent.id
   const isSpeaking = speaking === agent.id
   const status = isThinking ? thinking.label + '…' : isSpeaking ? 'Speaking' : isSel ? agent.idle : agent.status
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${agent.pos.x}%`, top: `${agent.pos.y}%` }}>
+      <div style={{ transform: `scale(${s})` }}>
       <motion.div
         role="button" tabIndex={0}
         onClick={() => onSelect(agent.id)}
@@ -81,12 +82,12 @@ function Seat({ agent, index, selected, thinking, speaking, onSelect, onView, en
         className={`group relative flex w-[138px] cursor-pointer flex-col items-center gap-2.5 rounded-3xl px-3 pb-3 pt-4 text-center outline-none transition-colors duration-500 ${isSel ? 'glass' : 'border border-transparent hover:bg-white/[0.03]'}`}
         style={isSel ? { boxShadow: '0 0 0 1px rgba(77,141,255,.55), 0 0 50px -8px rgba(77,141,255,.55), inset 0 1px 0 rgba(255,255,255,.1)' } : {}}
       >
-        <Orb agent={agent} size={58} active={isSel || isThinking || isSpeaking} thinking={isThinking} speaking={isSpeaking} />
+        <Orb agent={agent} size={compact ? 46 : 58} active={isSel || isThinking || isSpeaking} thinking={isThinking} speaking={isSpeaking} />
         <div className="min-w-0">
           <div className="text-[13px] font-medium leading-tight tracking-tight text-white">{agent.name}</div>
-          <div className={`mt-1 line-clamp-2 min-h-[26px] text-[10.5px] leading-[13px] ${isThinking ? 'text-azure' : 'text-white/45'}`}>{status}</div>
+          <div className={`mt-1 line-clamp-2 ${compact ? 'hidden' : ''} min-h-[26px] text-[10.5px] leading-[13px] ${isThinking ? 'text-azure' : 'text-white/45'}`}>{status}</div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className={`items-center gap-1.5 ${compact ? 'hidden' : 'flex'}`}>
           <span className="relative flex h-1.5 w-1.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -95,6 +96,7 @@ function Seat({ agent, index, selected, thinking, speaking, onSelect, onView, en
         </div>
         <button onClick={(e) => { e.stopPropagation(); onView(agent.id) }} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-white/60 transition hover:border-azure/60 hover:bg-azure/15 hover:text-white"><MonitorPlay size={11} />View screen</button>
       </motion.div>
+      </div>
     </div>
   )
 }
@@ -104,11 +106,14 @@ export function Stage({ agents, selected, thinking, speaking, onSelect, onView, 
   const ss = String(seconds % 60).padStart(2, '0')
   const sel = agents.find((a) => a.id === selected)
   const box = useRef(null)
-  const [scale, setScale] = useState(1)
+  const [size, setSize] = useState({ w: 1100, h: 600 })
+  const cardScale = Math.max(0.8, Math.min(size.w / 1150, size.h / 600, 1.1))
+  const compact = size.h < 480
+  const tableD = Math.round(Math.min(size.h * 0.66, size.w * 0.5))
   useEffect(() => {
     const el = box.current
     if (!el) return
-    const fit = () => setScale(Math.min(el.clientWidth / 1160, el.clientHeight / 560, 1.4))
+    const fit = () => setSize({ w: el.clientWidth, h: el.clientHeight })
     fit()
     const ro = new ResizeObserver(fit)
     ro.observe(el)
@@ -121,38 +126,33 @@ export function Stage({ agents, selected, thinking, speaking, onSelect, onView, 
       <div className="pointer-events-none absolute left-[18%] top-[30%] h-[40%] w-[40%] rounded-full bg-[#2a5cff]/10 blur-[120px]" style={{ animation: 'drift 14s ease-in-out infinite' }} />
       <div className="pointer-events-none absolute inset-0 opacity-[.35]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.14) 1px, transparent 1px)', backgroundSize: '34px 34px', maskImage: 'radial-gradient(ellipse 60% 55% at 50% 55%, black, transparent 75%)', WebkitMaskImage: 'radial-gradient(ellipse 60% 55% at 50% 55%, black, transparent 75%)' }} />
 
-      <div className="absolute left-1/2 top-1/2 h-[560px] w-[1160px]" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div className="absolute inset-0">
       {/* table */}
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
         animate={entered ? { opacity: 1, scale: 1 } : {}}
         transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute left-1/2 top-[60%] h-[44%] w-[62%] -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-[65%] -translate-x-1/2 -translate-y-1/2"
+        style={{ width: tableD, height: tableD }}
       >
-        <div className="absolute -inset-6 rounded-[50%] bg-azure/10 blur-3xl" />
+        <div className="absolute -inset-6 rounded-full bg-azure/10 blur-3xl" />
         <div
-          className="absolute inset-0 rounded-[50%]"
+          className="absolute inset-0 rounded-full"
           style={{
-            background: 'radial-gradient(ellipse at 50% 20%, rgba(120,160,255,.16), rgba(10,14,26,.92) 55%, rgba(5,6,10,.98))',
+            background: 'radial-gradient(circle at 50% 22%, rgba(120,160,255,.16), rgba(10,14,26,.92) 55%, rgba(5,6,10,.98))',
             border: '1px solid rgba(255,255,255,.10)',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,.14), inset 0 -30px 60px rgba(0,0,0,.6), 0 40px 80px -20px rgba(0,0,0,.8), 0 0 0 10px rgba(255,255,255,.012)',
           }}
         />
-        <div className="absolute inset-[9%] rounded-[50%] border border-white/[0.05]" />
-        <div className="absolute inset-[22%] rounded-[50%] border border-dashed border-white/[0.06]" />
+        <div className="absolute inset-[9%] rounded-full border border-white/[0.05]" />
+        <div className="absolute inset-[22%] rounded-full border border-dashed border-white/[0.06]" />
         <div className="absolute inset-0 grid place-items-center">
           <div className="text-center">
-            <div className="font-mono text-[10px] uppercase tracking-[0.35em] text-azure/90">Board Review · Q4</div>
-            <div className="mt-2 text-[28px] font-light tracking-tight text-white/95">{OWNER.company}</div>
-            <div className="mt-2 flex items-center justify-center gap-5 font-mono text-[10.5px] text-white/45">
-              <span>MRR <b className="font-medium text-white/80">$18.4k</b></span>
-              <span>Pipeline <b className="font-medium text-white/80">$84k</b></span>
-              <span>In session <b className="font-medium text-white/80">{mm}:{ss}</b></span>
-            </div>
-            <Caption caption={caption} className="mx-auto mt-5 h-[60px] w-[420px]" />
+            <Caption caption={caption} className="mx-auto h-[56px]" style={{ width: tableD * 0.74 }} />
           </div>
         </div>
       </motion.div>
+
 
       {/* beams */}
       <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -178,7 +178,7 @@ export function Stage({ agents, selected, thinking, speaking, onSelect, onView, 
       </svg>
 
       {agents.map((a, i) => (
-        <Seat key={a.id} agent={a} index={i} selected={selected} thinking={thinking} speaking={speaking} onSelect={onSelect} onView={onView} entered={entered} />
+        <Seat key={a.id} agent={a} index={i} s={cardScale} compact={compact} selected={selected} thinking={thinking} speaking={speaking} onSelect={onSelect} onView={onView} entered={entered} />
       ))}
 
       </div>

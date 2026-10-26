@@ -9,12 +9,14 @@ const PITCH = { bd: 1, finance: 0.82, marketing: 1.18, sales: 0.95, ops: 0.75 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-const GREETINGS = {
-  bd: 'Business Development here. 14 live threads and a 400-contact sequence in flight. What would you like to know?',
-  finance: 'Finance here. Books are reconciled through yesterday. Ask me about cash, burn or forecasts.',
-  marketing: 'Marketing here. Three campaigns are scheduled this week.',
-  sales: 'Sales here. Pipeline synced two minutes ago.',
-  ops: 'Operations here. I have flagged items in the task queue whenever you are ready.',
+const ORDER = ['bd', 'finance', 'marketing', 'sales', 'ops']
+const INT = Symbol('interrupted')
+const BRIEFS = {
+  bd: 'Business Development: 400 emails are out this week and three replies are in. Two of them look warm.',
+  finance: 'Finance: the books are reconciled through yesterday and cash is stable at two hundred fifty two thousand dollars.',
+  marketing: 'Marketing: newsletter opens are up six points, and three campaigns go live this week.',
+  sales: 'Sales: three qualified demos are booked, and the pipeline sits at eighty four thousand dollars.',
+  ops: 'Operations: the queue is moving, but I have two items flagged for your attention.',
 }
 const VIEW_LINE = {
   bd: 'Sharing my screen: the outreach sequence and the live email template.',
@@ -85,6 +87,13 @@ export default function App() {
     return () => clearInterval(id)
   }, [entered])
 
+  useEffect(() => {
+    if (!entered) return
+    const t = setTimeout(() => briefing(), 2600)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entered])
+
   const speakAloud = (who, text) =>
     new Promise((res) => {
       if (!voiceRef.current || !('speechSynthesis' in window)) return res()
@@ -98,18 +107,54 @@ export default function App() {
       setTimeout(res, text.length * 90 + 2500)
     })
 
-  const say = async (who, text, extra = {}) => {
+  const epochRef = useRef(0)
+
+  const sayRaw = async (who, text, extra, e) => {
     const id = ++idRef.current
     const voiced = who !== 'owner' && voiceRef.current && 'speechSynthesis' in window
     setMessages((m) => [...m, { id, who, text: '', full: text.length, time: now(), ...extra }])
     if (who !== 'owner') setSpeaking(who)
     const talk = voiced ? speakAloud(who, text) : Promise.resolve()
     for (let i = 2; i < text.length + 2; i += 2) {
+      if (epochRef.current !== e) return
       setMessages((m) => m.map((x) => (x.id === id ? { ...x, text: text.slice(0, i) } : x)))
       await sleep(voiced ? 105 : 15)
     }
     await talk
-    setSpeaking(null)
+    if (epochRef.current === e) setSpeaking(null)
+  }
+  const thinkRaw = async (agent, ms, e) => {
+    for (const label of thinkingLabels[agent]) {
+      if (epochRef.current !== e) return
+      setThinking({ agent, label })
+      await sleep(ms / thinkingLabels[agent].length)
+    }
+    if (epochRef.current === e) setThinking(null)
+  }
+
+  // stop whatever is being said or worked on right now
+  const halt = () => {
+    epochRef.current++
+    if ('speechSynthesis' in window) speechSynthesis.cancel()
+    setThinking(null); setSpeaking(null)
+    busyRef.current = false; setBusy(false)
+    setEmail((x) => (x.rewriting ? { ...x, rewriting: false } : x))
+  }
+  // every flow runs through here: starting a new one interrupts the old one
+  const run = async (fn) => {
+    halt()
+    const e = epochRef.current
+    busyRef.current = true; setBusy(true)
+    const alive = () => { if (epochRef.current !== e) throw INT }
+    const c = {
+      sleep: async (ms) => { await sleep(ms); alive() },
+      say: async (who, text, extra = {}) => { alive(); await sayRaw(who, text, extra, e); alive() },
+      think: async (agent, ms) => { alive(); await thinkRaw(agent, ms, e); alive() },
+    }
+    try { await fn(c) } catch (err) { if (err !== INT) throw err }
+    finally {
+      if (epochRef.current === e) { busyRef.current = false; setBusy(false); setThinking(null); setSpeaking(null) }
+    }
   }
   const sys = (text) => setMessages((m) => [...m, { id: ++idRef.current, who: 'sys', text, full: text.length, time: now() }])
   const share = (type) => {
@@ -124,92 +169,87 @@ export default function App() {
     live.current.panel = null
     setPanel(null)
   }
-  const think = async (agent, ms) => {
-    const labels = thinkingLabels[agent]
-    for (const label of labels) {
-      setThinking({ agent, label })
-      await sleep(ms / labels.length)
-    }
-    setThinking(null)
-  }
-
-  const view = async (id) => {
-    if (busyRef.current) return
-    busyRef.current = true; setBusy(true)
-    setSelected(id); greeted.current.add(id)
-    if (live.current.panel === SCREEN_OF[id]) { busyRef.current = false; setBusy(false); return }
-    await think(id, 700)
-    share(SCREEN_OF[id])
-    await say(id, VIEW_LINE[id])
-    busyRef.current = false; setBusy(false)
-  }
-
-  const select = async (id, greet = true) => {
+  const view = (id) => run(async (c) => {
     setSelected(id)
-    if (greet && !busyRef.current && !greeted.current.has(id)) {
-      greeted.current.add(id)
-      busyRef.current = true; setBusy(true)
-      await say(id, GREETINGS[id])
-      busyRef.current = false; setBusy(false)
-    }
-  }
+    if (live.current.panel === SCREEN_OF[id]) return
+    await c.think(id, 700)
+    share(SCREEN_OF[id])
+    await c.say(id, VIEW_LINE[id])
+  })
 
-  const send = async (raw) => {
+  const select = (id) => run(async (c) => {
+    setSelected(id)
+    await c.say(id, BRIEFS[id])
+  })
+
+  const briefing = () => run(async (c) => {
+    await c.sleep(500)
+    for (const id of ORDER) {
+      setSelected(id)
+      await c.say(id, BRIEFS[id])
+      await c.sleep(300)
+    }
+    setSelected(null)
+  })
+
+  const send = (raw) => {
     const text = raw.trim()
-    if (!text || busyRef.current) return
-    busyRef.current = true; setBusy(true)
-    await say('owner', text)
-    await sleep(250)
+    if (!text) return Promise.resolve()
+    return run(async (c) => {
+    await c.say('owner', text)
+    await c.sleep(250)
     const intent = detect(text.toLowerCase(), live.current)
     setDone((d) => [...d, intent])
     const go = (id) => { setSelected(id); greeted.current.add(id) }
 
     if (intent === 'count') {
-      go('bd'); await think('bd', 1500)
-      await say('bd', '400 emails sent, 3 replies received.', { chips: [{ l: 'Sent', v: '400' }, { l: 'Replies', v: '3' }, { l: 'Reply rate', v: '0.75%' }] })
+      go('bd'); await c.think('bd', 1500)
+      await c.say('bd', '400 emails sent, 3 replies received.', { chips: [{ l: 'Sent', v: '400' }, { l: 'Replies', v: '3' }, { l: 'Reply rate', v: '0.75%' }] })
     } else if (intent === 'template') {
-      go('bd'); await think('bd', 1100)
+      go('bd'); await c.think('bd', 1100)
       share('email')
-      await say('bd', "Here's the live template. It leads with our product and asks for 45 minutes, which probably explains the low reply rate.")
+      await c.say('bd', "Here's the live template. It leads with our product and asks for 45 minutes, which probably explains the low reply rate.")
     } else if (intent === 'rewrite') {
       go('bd'); share('email')
       setEmail((e) => ({ ...e, version: 1, rewriting: true }))
-      await say('bd', 'On it. Rewriting around what the customer is struggling with.')
-      await think('bd', 2400)
+      await c.say('bd', 'On it. Rewriting around what the customer is struggling with.')
+      await c.think('bd', 2400)
       setEmail((e) => ({ ...e, version: 2, rewriting: false, streaming: true, rewrote: true }))
-      await sleep(500)
-      say('bd', 'Done. It now opens with their problem, product talk is down 58%, and the ask is a 2-minute walkthrough. Want me to A/B test it on the next 100 sends?').then(() => {})
-      await sleep(2800)
+      await c.sleep(500)
+      const done2 = c.say('bd', 'Done. It now opens with their problem, product talk is down 58%, and the ask is a 2-minute walkthrough. Want me to A/B test it on the next 100 sends?')
+      done2.catch(() => {})
+      await c.sleep(2800)
       setEmail((e) => ({ ...e, streaming: false }))
-      await sleep(2400)
+      await c.sleep(2400)
+      await done2
     } else if (intent === 'abtest') {
       go('bd'); setEmail((e) => ({ ...e, abtest: true }))
-      await say('bd', 'Queued. v2 goes to the next 100 contacts, split 50/50 against v1. I will report back in 48 hours.')
+      await c.say('bd', 'Queued. v2 goes to the next 100 contacts, split 50/50 against v1. I will report back in 48 hours.')
     } else if (intent === 'runway') {
-      go('finance'); await think('finance', 1900)
+      go('finance'); await c.think('finance', 1900)
       share('runway')
-      await say('finance', '6 months at the current burn rate.', { chips: [{ l: 'Cash', v: '$252k' }, { l: 'Net burn', v: '$42k/mo' }] })
-      await say('finance', 'Closing the Meridian pilot would add about three weeks. Tap any lever on the right to see the effect.')
+      await c.say('finance', '6 months at the current burn rate.', { chips: [{ l: 'Cash', v: '$252k' }, { l: 'Net burn', v: '$42k/mo' }] })
+      await c.say('finance', 'Closing the Meridian pilot would add about three weeks. Tap any lever on the right to see the effect.')
     } else if (intent === 'ops') {
-      go('ops'); await think('ops', 2400)
+      go('ops'); await c.think('ops', 2400)
       share('ops')
-      await say('ops', 'Two tasks are delayed: the billing migration and pilot onboarding. Both are waiting on external inputs.')
-      await say('ops', "I've prepared an execution plan that recovers both by Friday. It needs your approval to start.")
+      await c.say('ops', 'Two tasks are delayed: the billing migration and pilot onboarding. Both are waiting on external inputs.')
+      await c.say('ops', "I've prepared an execution plan that recovers both by Friday. It needs your approval to start.")
     } else if (intent === 'approve') {
       setApproved(true)
       setTasks((ts) => ts.map((t) => (t.status === 'delayed' ? { ...t, status: 'in-progress' } : t)))
-      await say('ops', 'Approved. The VAT filing is in motion and the security questionnaire is drafted. Both delayed tasks are now in progress.')
+      await c.say('ops', 'Approved. The VAT filing is in motion and the security questionnaire is drafted. Both delayed tasks are now in progress.')
     } else {
       const id = intent === 'marketing' || intent === 'sales' ? intent : live.current.selected
       if (!id) {
-        await say('bd', 'Select a department first and I will route your question to the right agent.', { who: 'bd' })
+        await c.say('bd', 'Select a department first and I will route your question to the right agent.', { who: 'bd' })
       } else {
-        go(id); await think(id, 1300)
+        go(id); await c.think(id, 1300)
         if (id === 'marketing' || id === 'sales') share(id)
-        await say(id, FALLBACK[id])
+        await c.say(id, FALLBACK[id])
       }
     }
-    busyRef.current = false; setBusy(false)
+    })
   }
 
   const reset = () => {
@@ -225,8 +265,8 @@ export default function App() {
 
   // scripted "speech": the mic lights up and live captions type out, so the demo never depends on a real microphone
   const simulate = async (text, agent) => {
-    if (busyRef.current) return
-    if (agent) { setSelected(agent); greeted.current.add(agent) }
+    if (busyRef.current) halt()
+    if (agent) setSelected(agent)
     setListening(true)
     await sleep(800)
     for (let i = 1; i <= text.length && !cancelRef.current; i++) { setInterim(text.slice(0, i)); await sleep(26) }
@@ -244,7 +284,9 @@ export default function App() {
 
   const onMic = () => {
     if (listening) return stopListen()
-    if (busyRef.current) return
+    if (demo) { cancelRef.current = true; halt(); setDemo(false); return }
+    cancelRef.current = false
+    halt()
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     const fallback = () => { if (hint) simulate(hint.text, hint.agent) }
     if (!SR) return fallback()
@@ -270,8 +312,8 @@ export default function App() {
   }
 
   const runDemo = async () => {
-    if (demo) { cancelRef.current = true; return }
-    if (busyRef.current) return
+    if (demo) { cancelRef.current = true; halt(); setDemo(false); return }
+    halt()
     cancelRef.current = false; setDemo(true); reset()
     await sleep(700)
     for (const step of SUGGESTIONS) {
@@ -349,6 +391,16 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+
+      <div className="pointer-events-none fixed bottom-6 left-6 z-30 hidden lg:block [@media(max-height:720px)]:bottom-4">
+        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-azure/90">Board Review · Q4</div>
+        <div className="mt-1 text-[22px] font-light tracking-tight text-white/95">{OWNER.company}</div>
+        <div className="mt-1 flex items-center gap-4 font-mono text-[10px] text-white/45">
+          <span>MRR <b className="font-medium text-white/80">$18.4k</b></span>
+          <span>Pipeline <b className="font-medium text-white/80">$84k</b></span>
+          <span>In session <b className="font-medium text-white/80">{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</b></span>
+        </div>
+      </div>
 
       <ControlBar
         selected={selected} listening={listening} onMic={onMic} interim={interim} hint={hint?.text} onHint={() => hint && simulate(hint.text, hint.agent)}

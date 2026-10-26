@@ -67,8 +67,8 @@ export function Transcript({ messages, thinking }) {
 export function ControlBar({ selected, listening, onMic, interim, hint, onHint, busy, voice, setVoice, demo, onDemo }) {
   const agent = selected ? byId[selected] : null
   return (
-    <div className="relative z-20 shrink-0 px-4 pb-4 pt-1 lg:pb-6 [@media(max-height:720px)]:pb-2">
-      <div className="mx-auto flex max-w-2xl flex-col items-center">
+    <div className="relative z-20 shrink-0 px-4 pb-8 pt-1 lg:pb-10 [@media(max-height:720px)]:pb-6">
+      <div className="mx-auto flex max-w-2xl flex-col items-center" style={{ zoom: 0.8 }}>
         <div className="mb-3 flex min-h-[40px] [@media(max-height:720px)]:mb-1.5 [@media(max-height:720px)]:min-h-[28px] flex-col items-center justify-end text-center">
           <AnimatePresence mode="wait">
             {interim ? (
@@ -78,7 +78,7 @@ export function ControlBar({ selected, listening, onMic, interim, hint, onHint, 
             ) : listening ? (
               <motion.p key="l" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[13px] text-azure">Listening{agent ? ` · speaking to ${agent.name}` : ''}…</motion.p>
             ) : busy ? (
-              <motion.p key="b" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[12.5px] text-white/35">The room is responding…</motion.p>
+              <motion.p key="b" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[12.5px] text-white/35">The room is speaking · tap the mic to interrupt</motion.p>
             ) : hint ? (
               <motion.button key="h" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} onClick={onHint} className="group text-[13px] text-white/40 transition hover:text-white">
                 Tap the mic and say <span className="text-white/75 group-hover:text-white">“{hint}”</span>
@@ -107,8 +107,7 @@ export function ControlBar({ selected, listening, onMic, interim, hint, onHint, 
 
           <button
             onClick={onMic}
-            disabled={busy && !listening}
-            aria-label={listening ? 'Mute microphone' : 'Unmute and speak'}
+                        aria-label={listening ? 'Mute microphone' : 'Unmute and speak'}
             className={`relative grid h-16 w-16 place-items-center rounded-full transition duration-300 [@media(max-height:720px)]:h-14 [@media(max-height:720px)]:w-14 disabled:opacity-40 ${listening ? 'bg-azure text-white' : 'bg-white/[0.08] text-white/80 hover:bg-white/[0.14]'}`}
             style={listening ? { boxShadow: '0 0 50px -2px #4d8dff' } : {}}
           >

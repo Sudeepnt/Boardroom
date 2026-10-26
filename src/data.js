@@ -3,11 +3,11 @@ import { Briefcase, Landmark, Megaphone, Handshake, Workflow } from 'lucide-reac
 export const OWNER = { name: 'Crodal Team', role: 'Founders & Leadership', company: 'Northwind Labs' }
 
 export const AGENTS = [
-  { id: 'bd', name: 'Business Development', short: 'BD', icon: Briefcase, status: 'Running outreach sequence', idle: 'Monitoring 14 live threads', pos: { x: 11, y: 56 }, hue: 215 },
-  { id: 'finance', name: 'Finance', short: 'FIN', icon: Landmark, status: 'Reconciling October ledger', idle: 'Forecast model current', pos: { x: 31, y: 26 }, hue: 200 },
-  { id: 'marketing', name: 'Marketing', short: 'MKT', icon: Megaphone, status: 'Scheduling 3 campaigns', idle: 'Watching content performance', pos: { x: 50, y: 16 }, hue: 225 },
-  { id: 'sales', name: 'Sales', short: 'SLS', icon: Handshake, status: 'Qualifying inbound leads', idle: 'Pipeline synced 2m ago', pos: { x: 69, y: 26 }, hue: 205 },
-  { id: 'ops', name: 'Operations', short: 'OPS', icon: Workflow, status: 'Triaging task queue', idle: 'All systems nominal', pos: { x: 89, y: 56 }, hue: 220 },
+  { id: 'bd', name: 'Business Development', short: 'BD', icon: Briefcase, status: 'Running outreach sequence', idle: 'Monitoring 14 live threads', pos: { x: 19, y: 64 }, hue: 215 },
+  { id: 'finance', name: 'Finance', short: 'FIN', icon: Landmark, status: 'Reconciling October ledger', idle: 'Forecast model current', pos: { x: 32, y: 31 }, hue: 200 },
+  { id: 'marketing', name: 'Marketing', short: 'MKT', icon: Megaphone, status: 'Scheduling 3 campaigns', idle: 'Watching content performance', pos: { x: 50, y: 17 }, hue: 225 },
+  { id: 'sales', name: 'Sales', short: 'SLS', icon: Handshake, status: 'Qualifying inbound leads', idle: 'Pipeline synced 2m ago', pos: { x: 68, y: 31 }, hue: 205 },
+  { id: 'ops', name: 'Operations', short: 'OPS', icon: Workflow, status: 'Triaging task queue', idle: 'All systems nominal', pos: { x: 81, y: 64 }, hue: 220 },
 ]
 
 export const thinkingLabels = {
