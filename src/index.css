@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-ink: #05060a;
+  --color-azure: #4d8dff;
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: #05060a;
+  color: #f4f6fb;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+  border: 1px solid rgba(255,255,255,0.09);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 60px -20px rgba(0,0,0,0.7);
+}
+
+.hairline { border-color: rgba(255,255,255,0.08); }
+
+.scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
+
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes bar { 0%,100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+@keyframes drift { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(2%, -3%, 0); } }
+@keyframes caret { 50% { opacity: 0; } }
+
+.spin-slow { animation: spin-slow 9s linear infinite; }
+.spin-fast { animation: spin-slow 1.4s linear infinite; }
+.caret::after { content: ""; display: inline-block; width: 6px; height: 1em; margin-left: 2px; vertical-align: -2px; background: #4d8dff; animation: caret 1s steps(1) infinite; }
+
+.noise::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
