@@ -150,7 +150,7 @@ export function Intro({ onEnter }) {
           Weekly board meeting · Mondays 9:00 AM
         </motion.div>
         <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 1 }} className="text-[28px] font-light tracking-tight sm:text-[34px]">
-          Your team is ready to <span className="text-white/45">report to you.</span>
+          Your AI team is ready to <span className="text-white/45">report to you.</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1, duration: 1 }} className="mx-auto mt-3 max-w-sm text-[14px] text-white/40">
           Five departments are waiting in the room with this week's updates.
